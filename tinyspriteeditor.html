@@ -349,12 +349,12 @@ input[type="file"] {
 	<div id="zoom" style="float:left;">
 	</div>
 	<div style="clear:both; padding-bottom: 35px;">
-		<div style="position:relative; height: 0px; top:5px;">
+		<!-- <div style="position:relative; height: 0px; top:5px;">
 			index: <span id="spriteindexline">0</span>;
 			name: <input id="spritenameline" type="textfield"
 			 style="background-color: transparent;"
 			 onchange="storeSpriteNameLine()"></input>
-		</div>
+		</div> -->
 		<div id="commandline" class="commandline">
 			<div class="commandline-bubble"></div>
 			<div class="closecommand noselect" onclick="closeCommand()">×</div>
@@ -364,17 +364,26 @@ input[type="file"] {
 	<div id="palette" class="palette">
 	</div>
 	<div style="float:left; margin-left: 10px;">
-		<div id="pencolor" class="pencolor">
+		<div style="float: left">
+			<div id="pencolor" class="pencolor">
 			<div style="position: relative; width:0px; height:0px;">
 				<div id="pencolor-bg" class="pencolor-bg sprite-bg"></div>
 			</div>
 		</div>
-		<div>
-			<input type="textfield" class="color" id="pencolor-text"
-			 onchange="setPenColorFromText();"></input>
-		</div>
 		<button onclick="startCommand('PickPenColor');">Pick color</button>
-		<div style="padding-bottom: 5px;">
+		</div>
+		<div style="float: right; display: grid">
+			 <div>Byte:<input type="textfield" class="color" id="pencolor-text"
+			 onchange="setPenColorFromTextByte();"></input> </div>
+			 <div>R(0-7):<input type="textfield" class="color" id="pencolor-text-red"
+			 onchange="setPenColorFromText();"></input></div>
+			 <div>G(0-7):<input type="textfield" class="color" id="pencolor-text-green"
+			 onchange="setPenColorFromText();"></input></div>
+			 <div>B(0-3):<input type="textfield" class="color" id="pencolor-text-blue"
+			 onchange="setPenColorFromText();"></input></div>
+		</div>
+		
+		<!-- <div style="padding-bottom: 5px;">
 			Palette:<br>
 			<select id="palettename" style="font-size:100%;" onchange="setPalette(this)">
 				<option value="Standard">Standard</option>
@@ -384,7 +393,7 @@ input[type="file"] {
 				<option value="CBM64">CBM 64</option>
 				<option value="Puzzlescript">puzzlescript</option>
 			</select>
-		</div>
+		</div> -->
 	</div>
 
 </div>
@@ -442,6 +451,7 @@ input[type="file"] {
 	<option name="DataURL">Data URL</option>
 	<option name="CellScript">CellScript</option>
 	<option name="Puzzlescript">Puzzlescript</option>
+	<option name="RARS" selected>RARS 1Bpp</option>
 	</select>
 	<button onclick="importImage()">Import</button>
 	<button onclick="exportImage()">Export</button>
@@ -778,7 +788,7 @@ var puzzlescriptcolornames = ["black", "white", "grey", "darkgrey", "lightgrey",
 
 var spritenames = {};
 
-document.getElementById("palettename").selectedIndex = 0;
+//document.getElementById("palettename").selectedIndex = 0;
 var palettecolors = palettes["Standard"];
 
 // restore sprites and config
@@ -885,12 +895,52 @@ function configAnim() {
 }
 
 function setPenColorFromText() {
-	var text = document.getElementById("pencolor-text").value.trim();
-	pencolor = getColorFromHexString(text);
+	var textred = document.getElementById("pencolor-text-red").value.trim();
+	var textgreen = document.getElementById("pencolor-text-green").value.trim();
+	var textblue = document.getElementById("pencolor-text-blue").value.trim();
+	
+	//pencolor = getColorFromHexString(text);
+	pencolor = getColorFromCustomRGB(textred, textgreen, textblue)
 	updatePenColor();
-
 }
 
+function setPenColorFromTextByte() {
+	var text = document.getElementById("pencolor-text").value.trim();
+
+	pencolor = getColorFromHexByte(text);
+	updatePenColor();
+}
+
+function getColorFromCustomRGB(textred, textgreen, textblue) {
+	var red = parseInt(textred)
+	var green = parseInt(textgreen)
+	var blue = parseInt(textblue)
+	
+	if (red > 7 || green > 7 || blue > 3 || 
+		red < 0 || green < 0 || blue < 0) return [0,0,0,255];
+	var col = [Math.round(red*36.4285714286),Math.round(green*36.4285714286),blue*85,255]
+	document.getElementById("pencolor-text").value = parseInt(
+		(	("00"+ (blue >>> 0).toString(2)).substr(-2) +
+			("000"+(green >>> 0).toString(2)).substr(-3) +
+			("000"+(red >>> 0).toString(2)).substr(-3)), 2).toString(16)
+	return col  
+}
+
+function getColorFromHexByte(text) {
+	if (parseInt(text, 16) < 0 || parseInt(text, 16)>255) return [0,0,0,255];
+	var bin = ("00000000" + (parseInt(text,16) >>> 0).toString(2)).substr(-8)
+	var red = parseInt(bin.substring(5,8),2)
+	var green = parseInt(bin.substring(2,5),2)
+	var blue = parseInt(bin.substring(0,2),2)
+	document.getElementById("pencolor-text-red").value = red
+	document.getElementById("pencolor-text-green").value = green
+	document.getElementById("pencolor-text-blue").value = blue
+	
+	var col = [Math.round(red*36.4285714286),Math.round(green*36.4285714286),blue*85,255]
+
+	return col;
+
+}
 function getColorFromHexString(text) {
 	if (text.charAt(0) != "#") return;
 	text = text.substring(1);
@@ -924,8 +974,6 @@ function setPalette(elem) {
 
 function updatePenColor() {
 	var elem = document.getElementById("pencolor");
-	var elemtext = document.getElementById("pencolor-text");
-	elemtext.value = getHexString(pencolor);
 	elem.style.backgroundColor = getRGBAString(pencolor);
 }
 
@@ -1040,8 +1088,8 @@ function updateZoom() {
 			zoom.appendChild(div);
 		}
 	}
-	updateSpriteNameLine();
-	updateSpriteIndexLine();
+	//updateSpriteNameLine();
+	//updateSpriteIndexLine();
 	updateSpriteBG();
 	// do autosave here to ensure data is saved often without noticing slowdown
 	doAutosave(false);
@@ -1423,24 +1471,24 @@ function createPixelDiv(x,y) {
 }
 
 
-function createPaletteDiv(idx,color) {
-	var div = document.createElement("div");
-	if (idx%(palettecolors.length<=48 ? 8 : (palettecolors.length==66?11 : 12))
-	    == 0) div.style.clear="both";
-	div.style.cssFloat="left";
-	div.style.width=zoomlevel+"px";
-	div.style.height=zoomlevel+"px";
-	div.style.backgroundColor = getRGBAString(color);
-	div.className = "pixel noselect";
-	div.style.border = gridthickness+"px solid "+gridcolor;
-	div.addEventListener("click",function(e) {
-		pencolor = palettecolors[idx];
-		prevclick = {x:-1,y:-1};
-		updatePenColor();
-	});
-	div.appendChild(createBGDiv(zoomlevel));
-	return div;
-}
+// function createPaletteDiv(idx,color) {
+// 	var div = document.createElement("div");
+// 	if (idx%(palettecolors.length<=48 ? 8 : (palettecolors.length==66?11 : 12))
+// 	    == 0) div.style.clear="both";
+// 	div.style.cssFloat="left";
+// 	div.style.width=zoomlevel+"px";
+// 	div.style.height=zoomlevel+"px";
+// 	div.style.backgroundColor = getRGBAString(color);
+// 	div.className = "pixel noselect";
+// 	div.style.border = gridthickness+"px solid "+gridcolor;
+// 	div.addEventListener("click",function(e) {
+// 		pencolor = palettecolors[idx];
+// 		prevclick = {x:-1,y:-1};
+// 		updatePenColor();
+// 	});
+// 	div.appendChild(createBGDiv(zoomlevel));
+// 	return div;
+// }
 
 function createBGDiv(zoom) {
 	var div = document.createElement("div");
@@ -1467,14 +1515,14 @@ function createOnionDiv(x,y) {
 	return div;
 }
 
-function updatePalette() {
-	palette.innerHTML = "";
-	for (var i=0; i<palettecolors.length; i++) {
-		var div = createPaletteDiv(i,palettecolors[i]);
-		palette.appendChild(div);
-	}
-	updateSpriteBG();
-}
+// function updatePalette() {
+// 	palette.innerHTML = "";
+// 	for (var i=0; i<palettecolors.length; i++) {
+// 		var div = createPaletteDiv(i,palettecolors[i]);
+// 		palette.appendChild(div);
+// 	}
+// 	updateSpriteBG();
+// }
 
 // ------------------------------------------------------------
 // load/save
@@ -1485,8 +1533,11 @@ function exportImage() {
 		exportDataUrl(false);
 	} else if (select==1) {
 		exportDataUrl(true);
-	} else { // 2
+	} else if (select ==2){ // 2
 		exportImagePuzzleScript();
+	}
+	else {
+		exportCustomBytes();
 	}
 }
 
@@ -1609,6 +1660,47 @@ function exportImagePuzzleScript() {
 		}
 	}
 	dataurl.value = out;
+}
+
+function exportCustomBytes() {
+	var tx1=0, ty1=0, txlen=nrtilesx,tylen=nrtilesy;
+	if (document.getElementById("imgloadsavetarget").selectedIndex) {
+		tx1=curtilex;
+		ty1=curtiley;
+		txlen=1;
+		tylen=1;
+	}
+	var out="";
+	for (var ty=ty1; ty<ty1+tylen; ty++) {
+		for (var tx=tx1; tx<tx1+txlen; tx++) {
+			var outname = spritenames[tx+","+ty];
+			if (!outname) outname = "Sprite_"+tx+"_"+ty;
+			var data = spritecanvas.getContext("2d").getImageData(
+				tx*tilex,ty*tiley,tilex,tiley).data;
+			var outpalette = "";
+			var outgrid = "";
+			var idx=0;
+			var palidx=0;
+			var outpalmap = {};
+			var empty=true;
+			var hasTransparent=false;
+			for (var y=0; y<tiley; y++) {
+				for (var x=0; x<tilex; x++) {
+					var pix = [data[idx],data[idx+1],data[idx+2],data[idx+3]];
+					if (pix[3]!=0) {
+					 	empty=false;
+						 out += getByteString(pix, true) + ", "
+
+					idx += 4;
+				}
+				//out += "\n";
+			}
+			out += "\n"
+		}
+	}
+	dataurl.value = out;
+
+}
 }
 
 function getPuzzleScriptString(pix) {
@@ -1752,6 +1844,15 @@ function getHexString(pixel,noalpha) {
 	var colorstr = color.toString(16);
 	while (colorstr.length < 8) colorstr = "0"+colorstr;
 	return "#" + (!noalpha ? colorstr : colorstr.substr(2) );
+}
+
+function getByteString(pixel, noalpha) {
+	var red = ("000"+Math.round(pixel[0]/36.4285714286).toString(2)).substr(-3)
+	var green = ("000"+Math.round(pixel[1]/36.4285714286).toString(2)).substr(-3)
+	var blue = ("00"+Math.round(pixel[2]/85).toString(2)).substr(-2)
+	var color = blue + green + red
+	color = parseInt(color, 2).toString(16)	
+	return color	
 }
 
 
@@ -1961,7 +2062,7 @@ function copyMirrorY() {
 }
 
 
-updatePalette();
+// updatePalette();
 updateCanvasSizes();
 updatePenColor();
 updateSpriteBG();
