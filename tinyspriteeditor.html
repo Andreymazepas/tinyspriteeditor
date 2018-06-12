@@ -375,12 +375,24 @@ input[type="file"] {
 		<div style="float: right; display: grid">
 			 <div>Byte:<input type="textfield" class="color" id="pencolor-text"
 			 onchange="setPenColorFromTextByte();"></input> </div>
-			 <div>R(0-7):<input type="textfield" class="color" id="pencolor-text-red"
-			 onchange="setPenColorFromText();"></input></div>
-			 <div>G(0-7):<input type="textfield" class="color" id="pencolor-text-green"
-			 onchange="setPenColorFromText();"></input></div>
-			 <div>B(0-3):<input type="textfield" class="color" id="pencolor-text-blue"
-			 onchange="setPenColorFromText();"></input></div>
+			 <div>
+				 R(0-7):
+				 <!-- <input type="textfield" class="color" id="pencolor-text-red"
+			 onchange="setPenColorFromText();"></input> -->
+			 <input type="range" min="0" max="7" value="0" class="slider" id="pencolor-text-red" onchange="setPenColorFromText();">			 
+			</div>
+			 <div>
+				 G(0-7):
+				 <!-- <input type="textfield" class="color" id="pencolor-text-green"
+			 onchange="setPenColorFromText();"></input> -->
+			 <input type="range" min="0" max="7" value="0" class="slider" id="pencolor-text-green" onchange="setPenColorFromText();">			 
+			 </div>
+			 <div>
+				 B(0-3):
+				 <!-- <input type="textfield" class="color" id="pencolor-text-blue"
+			 	onchange="setPenColorFromText();"></input> -->
+			 <input type="range" min="0" max="3" value="0" class="slider" id="pencolor-text-blue" onchange="setPenColorFromText();">
+			</div>
 		</div>
 		
 		<!-- <div style="padding-bottom: 5px;">
@@ -919,10 +931,13 @@ function getColorFromCustomRGB(textred, textgreen, textblue) {
 	if (red > 7 || green > 7 || blue > 3 || 
 		red < 0 || green < 0 || blue < 0) return [0,0,0,255];
 	var col = [Math.round(red*36.4285714286),Math.round(green*36.4285714286),blue*85,255]
-	document.getElementById("pencolor-text").value = parseInt(
+	var colortext = parseInt(
 		(	("00"+ (blue >>> 0).toString(2)).substr(-2) +
 			("000"+(green >>> 0).toString(2)).substr(-3) +
 			("000"+(red >>> 0).toString(2)).substr(-3)), 2).toString(16)
+	if(colortext.length == 1) colortext = '0'+colortext
+	document.getElementById("pencolor-text").value = colortext
+	
 	return col  
 }
 
@@ -1852,6 +1867,7 @@ function getByteString(pixel, noalpha) {
 	var blue = ("00"+Math.round(pixel[2]/85).toString(2)).substr(-2)
 	var color = blue + green + red
 	color = parseInt(color, 2).toString(16)	
+	if(color.length == 1) color = '0'+color
 	return color	
 }
 
