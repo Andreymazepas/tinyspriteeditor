@@ -1704,7 +1704,7 @@ function exportCustomBytes() {
 					var pix = [data[idx],data[idx+1],data[idx+2],data[idx+3]];
 					if (pix[3]!=0) {
 					 	empty=false;
-						 out += getByteString(pix, true) + ", "
+						 out += "0x" + getByteString(pix, true) + ", "
 
 					idx += 4;
 				}
